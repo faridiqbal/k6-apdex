@@ -22,11 +22,8 @@ export default function () {
     
     //collect APDEX performance
     if (res.timings.duration <= 2000) apdex_satisfied.add(1);
-    else if (res.timings.duration <= 8000) apdex_tolerate.add(1);
-    else {
-        apdex_satisfied.add(0);
-        apdex_tolerate.add(0);
-    }
+    if (res.timings.duration > 2000 && res.timings.duration < (4 * 2000)) apdex_tolerate.add(1);
+    else apdex_tolerate.add(0) ;
     
     sleep(1);
 }
@@ -54,5 +51,4 @@ export function handleSummary(data) {
         '\nAPDEX Result: ' + apdex_result +
         '\n\n'
     };
-    
 }
