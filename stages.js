@@ -5,6 +5,11 @@ import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 //k6 run stages.js
 
+const acceptable_duration = 2000; //miliseconds
+const acceptable_tolerate = 4 * acceptable_duration; //4 times
+var apdex_satisfied = new Counter('apdex_satisfied');
+var apdex_tolerate = new Counter('apdex_tolerate');
+
 export const options = {
     stages: [
         { duration: '1m', target: 500 },
@@ -13,17 +18,19 @@ export const options = {
     ],
 };
 
-var apdex_satisfied = new Counter('apdex_satisfied');
-var apdex_tolerate = new Counter('apdex_tolerate');
+export function setup() {
+    // setup initial value
+    apdex_satisfied.add(0);
+    apdex_tolerate.add(0);
+}
 
 export default function () {
     const res = http.get('http://test.k6.io');
     check(res, { 'status was 200': (r) => r.status == 200 });
     
     //collect APDEX performance
-    if (res.timings.duration <= 2000) apdex_satisfied.add(1);
-    if (res.timings.duration > 2000 && res.timings.duration < (4 * 2000)) apdex_tolerate.add(1);
-    else apdex_tolerate.add(0) ;
+    if (res.timings.duration <= acceptable_duration) apdex_satisfied.add(1);
+    else if (res.timings.duration < acceptable_tolerate) apdex_tolerate.add(1);
     
     sleep(1);
 }
@@ -51,4 +58,5 @@ export function handleSummary(data) {
         '\nAPDEX Result: ' + apdex_result +
         '\n\n'
     };
+    
 }
